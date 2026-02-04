@@ -19,7 +19,7 @@ const App = () => {
 
   // Fetch all notes from backend
   function fetchNotes() {
-    axios.get("https://backend-notes-cm.onrender.com").then((res) => {
+    axios.get("https://backend-notes-cm.onrender.com/api/notes").then((res) => {
       setNotes(res.data.notes);
     });
   }
@@ -34,11 +34,10 @@ const App = () => {
     const { title, description } = e.target.elements;
 
     axios
-      .post("https://backend-notes-cm.onrender.com", {
+      .post("https://backend-notes-cm.onrender.com/api/notes", {
         title: title.value,
         description: description.value,
-      })
-      .then((res) => {
+      }).then((res) => {
         setNotes((prevNotes) => [res.data.note, ...prevNotes]);
       });
 
@@ -55,12 +54,10 @@ const App = () => {
 
   // Update note using patch
   function handleUpdate() {
-    axios
-      .patch(`https://backend-notes-cm.onrender.com/${editId}`, {
+    axios.patch(`https://backend-notes-cm.onrender.com/api/notes/${editId}`, {
         title: editTitle,
         description: editDescription,
-      })
-      .then(() => {
+      }).then(() => {
         fetchNotes();
         setIsEditOpen(false); // close modal after success
       });
@@ -68,7 +65,7 @@ const App = () => {
 
   // Delete note by id
   function handleDelete(noteId) {
-    axios.delete(`https://backend-notes-cm.onrender.com/${noteId}`).then(() => {
+    axios.delete(`https://backend-notes-cm.onrender.com/api/notes/${noteId}`).then(() => {
       fetchNotes();
     });
   }
