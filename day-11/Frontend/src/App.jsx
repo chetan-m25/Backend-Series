@@ -19,7 +19,7 @@ const App = () => {
 
   // Fetch all notes from backend
   function fetchNotes() {
-    axios.get("http://localhost:8000/api/notes").then((res) => {
+    axios.get("https://backend-notes-cm.onrender.com").then((res) => {
       setNotes(res.data.notes);
     });
   }
@@ -34,7 +34,7 @@ const App = () => {
     const { title, description } = e.target.elements;
 
     axios
-      .post("http://localhost:8000/api/notes", {
+      .post("https://backend-notes-cm.onrender.com", {
         title: title.value,
         description: description.value,
       })
@@ -56,7 +56,7 @@ const App = () => {
   // Update note using patch
   function handleUpdate() {
     axios
-      .patch(`http://localhost:8000/api/notes/${editId}`, {
+      .patch(`https://backend-notes-cm.onrender.com/${editId}`, {
         title: editTitle,
         description: editDescription,
       })
@@ -68,7 +68,7 @@ const App = () => {
 
   // Delete note by id
   function handleDelete(noteId) {
-    axios.delete(`http://localhost:8000/api/notes/${noteId}`).then(() => {
+    axios.delete(`https://backend-notes-cm.onrender.com/${noteId}`).then(() => {
       fetchNotes();
     });
   }
