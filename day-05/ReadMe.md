@@ -1,4 +1,4 @@
-This is Day-05 of Learning Backend. Cohort-2.0
+This is Day-05 of Learning Backend. 
 
 
 📘 Today i learned =>

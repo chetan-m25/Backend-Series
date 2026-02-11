@@ -1,4 +1,4 @@
-## This is Day-06 of Learning Backend. Cohort-2.0
+## This is Day-06 of Learning Backend.
 
 The focus of this day was to **connect a Node.js backend with MongoDB Atlas** using **Mongoose** and to understand **real world database connection and DNS related issues**.
 

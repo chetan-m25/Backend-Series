@@ -1,4 +1,4 @@
-## This is Day-07 of Learning Backend. Cohort-2.0
+## This is Day-07 of Learning Backend.
 
 I focused on connecting a backend server with MongoDB and structuring the project in a clean, scalable way. The main goal was to understand how real backend applications organize code and handle database operations.
 
