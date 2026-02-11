@@ -1,4 +1,4 @@
-## This is Day-08 of Learning Backend. Cohort-2.0
+## This is Day-08 of Learning Backend. 
 
 Today i focused on implementing complete **CRUD operations** using MongoDB and testing them through REST API requests.
 
