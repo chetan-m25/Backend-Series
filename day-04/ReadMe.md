@@ -1,4 +1,4 @@
-This is Day-04 of Learning Backend. Cohort-2.0
+This is Day-04 of Learning Backend.
 
 * A proper folder structure is important because it improves code readability, scalability, and maintenance.
 * The app.js file is created in src folder here we usually create server and config server.

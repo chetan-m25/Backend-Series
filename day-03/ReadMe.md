@@ -1,4 +1,4 @@
-This is Day-03 of Learning Backend. Cohort-2.0
+This is Day-03 of Learning Backend. 
 
 * What are API's ?
 > Application Program Interface (API) is a set of rules and protocols that enables.

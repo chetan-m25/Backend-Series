@@ -1,4 +1,4 @@
-This is Day-01 of Learning Backend Cohort-2.0
+This is Day-01 of Learning Backend. 
 
 * What are Packages ? 
 > A package is a collection of related classes, functions, or files kept in one place.

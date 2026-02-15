@@ -1,4 +1,4 @@
-This is Day-02 of Learning Backend Cohort-2.0
+This is Day-02 of Learning Backend.
 
 * What is Server ?
 > A server is a system that listens to client requests and provides data or services in response.
