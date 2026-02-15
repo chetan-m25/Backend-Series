@@ -11,4 +11,10 @@ postRouter.post(
   postController.createPostController, // Call controller to handle post creation
 );
 
+// Route to get all posts of logged-in user
+postRouter.get("/", postController.getPostController);
+
+// Route to get details of a specific post by postId
+postRouter.get("/details/:postId", postController.getPostDetailsController);
+
 module.exports = postRouter;
