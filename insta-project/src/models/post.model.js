@@ -12,7 +12,7 @@ const postSchema = new mongoose.Schema({
     type: String,
     required: [true, "Image URL is required for creating post"],
   },
-  // Reference to the user who created the posty
+  // Reference to the user who created the post
   user: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "users",
