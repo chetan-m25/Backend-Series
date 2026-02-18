@@ -2,6 +2,7 @@ const postModel = require("../models/post.model");
 const ImageKit = require("@imagekit/nodejs"); // Import ImageKit package to upload images
 const { toFile } = require("@imagekit/nodejs"); // Import helper function to convert buffer into file format
 const jwt = require("jsonwebtoken");
+const likeModel = require("../models/like.model");
 
 // Create ImageKit instance using private key from .env file
 const imagekit = new ImageKit({
@@ -10,24 +11,6 @@ const imagekit = new ImageKit({
 
 // Controller to create a new post
 async function createPostController(req, res) {
-  // Check if token is provided in cookies
-  const token = req.cookies.token;
-  if (!token) {
-    return res.status(401).json({
-      message: "Token not provided, Unauthorized Access",
-    });
-  }
-
-  // Verify JWT token and return error if token is invalid or expired
-  let decoded;
-  try {
-    decoded = jwt.verify(token, process.env.JWT_SECRET);
-  } catch (err) {
-    return res.status(401).json({
-      message: "User not logged in or Unauthorized Access",
-    });
-  }
-
   // Upload image file to ImageKit
   const file = await imagekit.files.upload({
     file: await toFile(Buffer.from(req.file.buffer), "file"),
@@ -39,7 +22,7 @@ async function createPostController(req, res) {
   const post = await postModel.create({
     caption: req.body.caption,
     imgUrl: file.url,
-    user: decoded.id,
+    user: req.user.id,
   });
 
   // Send success response with created post data
@@ -51,26 +34,8 @@ async function createPostController(req, res) {
 
 // Get all posts of logged-in user after verifying JWT token
 async function getPostController(req, res) {
-  // Check if token is provided in cookies
-  const token = req.cookies.token;
-  if (!token) {
-    return res.status(401).json({
-      message: "Token not found , UnAuthorized Access",
-    });
-  }
-
-  // Verify JWT token and return error if token is invalid or expired
-  let decoded;
-  try {
-    decoded = jwt.verify(token, process.env.JWT_SECRET);
-  } catch (err) {
-    return res.status(401).json({
-      message: "Token invalid",
-    });
-  }
-
   // Extract user ID from decoded token
-  const userId = decoded.id;
+  const userId = req.user.id;
 
   // Find all posts created by this user
   const posts = await postModel.find({
@@ -86,25 +51,7 @@ async function getPostController(req, res) {
 
 // Get single post details if user is authorized
 async function getPostDetailsController(req, res) {
-  // Check token is provided, If missing deny unauthorized access
-  const token = req.cookies.token;
-  if (!token) {
-    return res.status(401).json({
-      message: "Token not found , UnAuthorized Access",
-    });
-  }
-
-  // Verify JWT token and return error if token is invalid or expired
-  let decoded;
-  try {
-    decoded = jwt.verify(token, process.env.JWT_SECRET);
-  } catch (err) {
-    return res.status(401).json({
-      message: "UnAuthorized Access",
-    });
-  }
-
-  const userId = decoded.id; // Extract user ID from token
+  const userId = req.user.id; // Get logged-in user id (from auth middleware)
   const postId = req.params.postId; // Get post ID from URL parameters
 
   // Find post by its ID
@@ -132,8 +79,70 @@ async function getPostDetailsController(req, res) {
   });
 }
 
+// Controller to like a post
+async function likePostController(req, res) {
+  const username = req.user.username; // Get logged-in username (from auth middleware)
+  const postId = req.params.postId; // Get post ID from URL
+
+  // Check if post exists
+  const post = await postModel.findById(postId);
+  if (!post) {
+    return res.status(404).json({
+      message: "Post not Found",
+    });
+  }
+
+  // Create like record for this user and post
+  const like = await likeModel.create({
+    post: postId,
+    user: username,
+  });
+
+  // Send success response
+  res.status(200).json({
+    message: "Post Liked",
+    like,
+  });
+}
+
+async function unlikePostController(req, res) {
+  const username = req.user.username; // Get logged-in user's username
+  const postId = req.params.postId; // Get post ID from URL
+
+  // Check if post exists
+  const post = await postModel.findById(postId);
+  if (!post) {
+    return res.status(404).json({
+      message: "Post not Found",
+    });
+  }
+
+  // Find like record for this user and post
+  const like = await likeModel.findOne({
+    post: postId,
+    user: username,
+  });
+
+  // If user has not liked this post
+  if (!like) {
+    return res.status(400).json({
+      message: "You have not liked this post",
+    });
+  }
+
+  // Delete the like record (unlike)
+  await likeModel.findByIdAndDelete(like._id);
+
+  // Send success response
+  res.status(200).json({
+    message: "Post Unliked",
+  });
+}
+
 module.exports = {
   createPostController,
   getPostController,
   getPostDetailsController,
+  likePostController,
+  unlikePostController,
 };

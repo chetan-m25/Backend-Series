@@ -36,9 +36,16 @@ async function registerController(req, res) {
   });
 
   // Generate JWT token (valid for 1 day)
-  const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
-    expiresIn: "1d",
-  });
+  const token = jwt.sign(
+    {
+      id: user._id,
+      username: user.username,
+    },
+    process.env.JWT_SECRET,
+    {
+      expiresIn: "1d",
+    },
+  );
 
   // Store token in cookies
   res.cookie("token", token);
@@ -83,9 +90,16 @@ async function loginController(req, res) {
   }
 
   // Generate JWT token after successful login
-  const token = jwt.sign({ id: userLogin._id }, process.env.JWT_SECRET, {
-    expiresIn: "1d",
-  });
+  const token = jwt.sign(
+    {
+      id: userLogin._id,
+      username: userLogin.username,
+    },
+    process.env.JWT_SECRET,
+    {
+      expiresIn: "1d",
+    },
+  );
 
   // Store token in cookies
   res.cookie("token", token);
