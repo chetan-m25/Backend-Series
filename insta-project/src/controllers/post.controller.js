@@ -1,8 +1,8 @@
 const postModel = require("../models/post.model");
 const ImageKit = require("@imagekit/nodejs"); // Import ImageKit package to upload images
 const { toFile } = require("@imagekit/nodejs"); // Import helper function to convert buffer into file format
-const jwt = require("jsonwebtoken");
 const likeModel = require("../models/like.model");
+const saveModel = require("../models/save.model");
 
 // Create ImageKit instance using private key from .env file
 const imagekit = new ImageKit({
@@ -11,6 +11,13 @@ const imagekit = new ImageKit({
 
 // Controller to create a new post
 async function createPostController(req, res) {
+  // Check if file is uploaded
+  if (!req.file) {
+    return res.status(400).json({
+      message: "Please upload an image",
+    });
+  }
+
   // Upload image file to ImageKit
   const file = await imagekit.files.upload({
     file: await toFile(Buffer.from(req.file.buffer), "file"),
@@ -139,6 +146,52 @@ async function unlikePostController(req, res) {
   });
 }
 
+// Controller to get feed of all posts with like status for loggedIn user
+async function getFeedController(req, res) {
+  const user = req.user;
+
+  // Use Promise.all to wait for all posts to be processed with like status
+  const posts = await Promise.all(
+    (
+      await postModel
+        .find() // Fetch all posts
+        .populate("user") // Populate user details for each post
+        .lean() // Convert Mongoose documents to plain JavaScript objects
+        .sort({ createdAt: -1 })
+    ) // Sort posts by creation date in descending order
+
+      // Map over each post to check if the loggedIn user has liked it
+      .map(async (post) => {
+        // count total likes
+        const likesCount = await likeModel.countDocuments({ post: post._id });
+
+        // Check if loggedIn user has liked this post
+        const isLiked = await likeModel.findOne({
+          user: user.username,
+          post: post._id,
+        });
+
+        // count saved state for this user
+        const isSaved = await saveModel.findOne({
+          user: user.username,
+          post: post._id,
+        });
+
+        // Add likesCount count, isLiked and isSaved property to post object
+        post.likesCount = likesCount;
+        post.isLiked = Boolean(isLiked);
+        post.isSaved = Boolean(isSaved);
+
+        return post; // Return the modified post object
+      }),
+  );
+
+  res.status(200).json({
+    message: "Posts Fetched Successfully",
+    posts,
+  });
+}
+
 // Controller to save a post (bookmark)
 async function savePostController(req, res) {
   const username = req.user.username;
@@ -209,6 +262,7 @@ module.exports = {
   getPostDetailsController,
   likePostController,
   unlikePostController,
+  getFeedController,
   savePostController,
   unsavePostController,
 };
