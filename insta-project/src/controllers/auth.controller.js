@@ -2,10 +2,38 @@ const userModel = require("../models/user.model");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 
+const MIN_PASSWORD_LENGTH = 5;
+const MAX_PASSWORD_LENGTH = 15;
+const ONE_DAY_MS = 24 * 60 * 60 * 1000;
+
+function getTokenCookieOptions() {
+  return {
+    httpOnly: true,
+    sameSite: "none",
+    secure: true,
+    maxAge: ONE_DAY_MS,
+    path: "/",
+  };
+}
+
+function validatePasswordLength(password) {
+  if (!password || password.length < MIN_PASSWORD_LENGTH) {
+    return { valid: false, message: "Password must be at least 5 characters" };
+  }
+  if (password.length > MAX_PASSWORD_LENGTH) {
+    return { valid: false, message: "Password must not exceed 15 characters" };
+  }
+  return { valid: true };
+}
+
 // Controller for user registration
 async function registerController(req, res) {
-  // Get user data from request body
-  const { username, email, password, profileImage, bio } = req.body;
+  const { username, email, password, bio, profileImage } = req.body;
+
+  const passwordCheck = validatePasswordLength(password);
+  if (!passwordCheck.valid) {
+    return res.status(400).json({ message: passwordCheck.message });
+  }
 
   // Check if user already exists with same username OR email
   const isUserExists = await userModel.findOne({
@@ -15,27 +43,22 @@ async function registerController(req, res) {
   // If user already exists, return error
   if (isUserExists) {
     return res.status(409).json({
-      message:
-        "User already exists" +
-        (isUserExists.email === email
-          ? " with this email"
-          : " with this username"),
+      message: "User already exists with this Username or Email",
     });
   }
 
   // Hash the password before saving (10 = salt rounds)
   const hash = await bcrypt.hash(password, 10);
 
-  // Create new user in database
   const user = await userModel.create({
     username,
     email,
-    password: hash, // Save hashed password
-    profileImage,
+    password: hash,
     bio,
+    profileImage,
   });
 
-  // Generate JWT token (valid for 1 day)
+  // Generate JWT token
   const token = jwt.sign(
     {
       id: user._id,
@@ -43,17 +66,17 @@ async function registerController(req, res) {
     },
     process.env.JWT_SECRET,
     {
-      expiresIn: "1d",
+      expiresIn: "4d",
     },
   );
 
   // Store token in cookies
-  res.cookie("token", token);
+  res.cookie("token", token, getTokenCookieOptions());
 
-  // Send success response (without password)
-  res.status(200).json({
+  res.status(201).json({
     message: "User Registered Successfully",
     user: {
+      _id: user._id,
       username: user.username,
       email: user.email,
       bio: user.bio,
@@ -64,56 +87,93 @@ async function registerController(req, res) {
 
 // Controller for user login
 async function loginController(req, res) {
-  // Get login data from request body
   const { username, email, password } = req.body;
 
   // Find user by username OR email
-  const userLogin = await userModel.findOne({
-    $or: [{ username: username }, { email: email }],
-  });
+  const user = await userModel
+    .findOne({
+      $or: [{ username: username }, { email: email }],
+    })
+    .select("+password"); // Include password field for comparison
 
   // If user not found, return error
-  if (!userLogin) {
+  if (!user) {
     return res.status(404).json({
       message: "User not found",
     });
   }
 
   // Compare entered password with hashed password
-  const isPasswordValid = await bcrypt.compare(password, userLogin.password);
+  const isValidPassword = await bcrypt.compare(password, user.password);
 
   // If password is incorrect, return error
-  if (!isPasswordValid) {
+  if (!isValidPassword) {
     return res.status(401).json({
-      message: "Invalid password",
+      message: "Invalid Password",
     });
   }
 
   // Generate JWT token after successful login
   const token = jwt.sign(
     {
-      id: userLogin._id,
-      username: userLogin.username,
+      id: user._id,
+      username: user.username,
     },
     process.env.JWT_SECRET,
     {
-      expiresIn: "1d",
+      expiresIn: "4d",
     },
   );
 
   // Store token in cookies
-  res.cookie("token", token);
+  res.cookie("token", token, getTokenCookieOptions());
 
-  // Send success response (without password)
   res.status(200).json({
-    message: "User loggedIn Successfully",
+    message: "User LoggedIn Successfully",
     user: {
-      username: userLogin.username,
-      email: userLogin.email,
-      bio: userLogin.bio,
-      profileImage: userLogin.profileImage,
+      _id: user._id,
+      username: user.username,
+      email: user.email,
+      bio: user.bio,
+      profileImage: user.profileImage,
     },
   });
 }
 
-module.exports = { registerController, loginController };
+// Controller to get current loggedIn user details
+async function getMeController(req, res) {
+  const userId = req.user.id;
+
+  const user = await userModel.findById(userId);
+
+  res.status(200).json({
+    user: {
+      _id: user._id,
+      username: user.username,
+      email: user.email,
+      bio: user.bio,
+      profileImage: user.profileImage,
+    },
+  });
+}
+
+// Controller for user logout
+async function logoutController(req, res) {
+  res.clearCookie("token", {
+    httpOnly: true,
+    sameSite: "none",
+    secure: true,
+    path: "/",
+  });
+
+  res.status(200).json({
+    message: "User logged out successfully",
+  });
+}
+
+module.exports = {
+  registerController,
+  loginController,
+  getMeController,
+  logoutController,
+};
