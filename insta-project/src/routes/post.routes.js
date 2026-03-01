@@ -68,6 +68,13 @@ postRouter.post(
   postController.unsavePostController,
 );
 
+// Route to delete a post by postId
+postRouter.delete(
+  "/:postId",
+  identifyUser,
+  postController.deletePostController,
+);
+
 // Private Route to get all posts from DB for loggedIn user
 postRouter.get("/feed", identifyUser, postController.getFeedController);
 

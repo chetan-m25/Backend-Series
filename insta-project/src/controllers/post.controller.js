@@ -99,19 +99,32 @@ async function likePostController(req, res) {
     });
   }
 
-  // Create like record for this user and post
-  const like = await likeModel.create({
+  // Find like record for this user and post
+  const like = await likeModel.findOne({
     post: postId,
     user: username,
   });
 
-  // Send success response
-  res.status(200).json({
+  // If user has already liked this post
+  if (like) {
+    return res.status(400).json({
+      message: "User already liked this post",
+    });
+  }
+
+  // Create like record for this user and post
+  const likePost = await likeModel.create({
+    post: postId,
+    user: username,
+  });
+
+  res.status(201).json({
     message: "Post Liked",
-    like,
+    likePost,
   });
 }
 
+// Controller to unlike a post
 async function unlikePostController(req, res) {
   const username = req.user.username; // Get logged-in user's username
   const postId = req.params.postId; // Get post ID from URL
@@ -256,6 +269,41 @@ async function unsavePostController(req, res) {
   });
 }
 
+// Controller to delete a post
+async function deletePostController(req, res) {
+  const userId = req.user.id;
+  const postId = req.params.postId;
+
+  // Find post by its ID
+  const post = await postModel.findById(postId);
+
+  // If post does not exist, return 404 error
+  if (!post) {
+    return res.status(404).json({
+      message: "Post not found",
+    });
+  }
+
+  // Allow only if post belongs to loggedIn user
+  const isValidUser = post.user.toString() === userId;
+  if (!isValidUser) {
+    return res.status(403).json({
+      message: "You can only delete your own posts",
+    });
+  }
+
+  // Delete the post
+  await postModel.findByIdAndDelete(postId);
+
+  // Delete all likes and saves associated with this post
+  await likeModel.deleteMany({ post: postId });
+  await saveModel.deleteMany({ post: postId });
+
+  res.status(200).json({
+    message: "Post deleted successfully",
+  });
+}
+
 module.exports = {
   createPostController,
   getPostController,
@@ -265,4 +313,5 @@ module.exports = {
   getFeedController,
   savePostController,
   unsavePostController,
+  deletePostController,
 };
