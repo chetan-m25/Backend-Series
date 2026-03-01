@@ -37,4 +37,18 @@ postRouter.post(
   postController.unlikePostController,
 );
 
+// Route to save a post by postId
+postRouter.post(
+  "/save/:postId",
+  identifyUser,
+  postController.savePostController,
+);
+
+// Route to unsave a post by postId
+postRouter.post(
+  "/unsave/:postId",
+  identifyUser,
+  postController.unsavePostController,
+);
+
 module.exports = postRouter;

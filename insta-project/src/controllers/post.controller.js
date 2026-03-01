@@ -139,10 +139,76 @@ async function unlikePostController(req, res) {
   });
 }
 
+// Controller to save a post (bookmark)
+async function savePostController(req, res) {
+  const username = req.user.username;
+  const postId = req.params.postId;
+
+  const post = await postModel.findById(postId);
+  if (!post) {
+    return res.status(404).json({
+      message: "Post not found",
+    });
+  }
+
+  const alreadySaved = await saveModel.findOne({
+    post: postId,
+    user: username,
+  });
+
+  if (alreadySaved) {
+    return res.status(400).json({
+      message: "Post already saved",
+    });
+  }
+
+  const savedPost = await saveModel.create({
+    post: postId,
+    user: username,
+  });
+
+  res.status(201).json({
+    message: "Post saved Successfully",
+    savedPost,
+  });
+}
+
+// Controller to unsave a post (remove bookmark)
+async function unsavePostController(req, res) {
+  const username = req.user.username;
+  const postId = req.params.postId;
+
+  const post = await postModel.findById(postId);
+  if (!post) {
+    return res.status(404).json({
+      message: "Post not found",
+    });
+  }
+
+  const saved = await saveModel.findOne({
+    post: postId,
+    user: username,
+  });
+
+  if (!saved) {
+    return res.status(400).json({
+      message: "Post not saved",
+    });
+  }
+
+  await saveModel.findByIdAndDelete(saved._id);
+
+  res.status(200).json({
+    message: "Post unsaved successfully",
+  });
+}
+
 module.exports = {
   createPostController,
   getPostController,
   getPostDetailsController,
   likePostController,
   unlikePostController,
+  savePostController,
+  unsavePostController,
 };
