@@ -1,9 +1,16 @@
 const express = require("express");
 const app = express();
 const cookieParser = require("cookie-parser");
+const cors = require("cors");
 
 app.use(express.json()); // Middleware to convert JSON data into JS object
 app.use(cookieParser()); // Middleware to parse cookies
+app.use(
+  cors({
+    credentials: true,
+    origin: "http://localhost:5173",
+  }),
+);
 
 // Importing route handlers
 const authRouter = require("./routes/auth.routes");
